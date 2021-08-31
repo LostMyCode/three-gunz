@@ -129,6 +129,35 @@ offset += 4;
 say(NodeCount, PolygonCount, NumVertices, NumIndices);
 
 // open nodes
+function Open_Nodes(pNode, data, State) {
+    pNode.bbTree = [];
+    for (let i = 0; i < 6; i++) {
+        const bound = data.readFloatLE(offset);
+        offset += 4;
+        pNode.bbTree.push(bound);
+    }
+
+    pNode.plane = {};
+    pNode.plane.a = data.readFloatLE(offset);
+    offset += 4;
+    pNode.plane.b = data.readFloatLE(offset);
+    offset += 4;
+    pNode.plane.c = data.readFloatLE(offset);
+    offset += 4;
+    pNode.plane.d = data.readFloatLE(offset);
+    offset += 4;
+
+    // branch
+    let flag = data.readUInt8(offset++);
+    if (flag) {
+        // open front node
+    }
+    flag = data.readUInt8(offset++);
+    if (flag) {
+        // open back node
+    }
+}
+
 
 // [END] OpenRs
 
