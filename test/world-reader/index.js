@@ -1,10 +1,11 @@
 const fs = require("fs");
 const path = require('path');
+const xmlParser = require("fast-xml-parser");
 const BufferReader = require("./BufferReader");
 const say = require("./logger");
 const { rvector, BSPNORMALVERTEX, vec2, DotProduct, OpenNodesState } = require("./Structs");
 
-console.log("[map read] .RS read test");
+console.log("[world-reader] GunZ world reading test");
 
 const RS_ID = 0x12345678;
 const RS_VERSION = 7;
@@ -12,6 +13,10 @@ const RS_VERSION = 7;
 const RM_FLAG_HIDE = 0x0080; // from RealSpace2 -> Include -> RTypes.h
 
 const Materials = [];
+const StaticObjectLightList = [];
+const StaticMapLightList = [];
+const StaticSunLightList = [];
+const PhysOnly = false; // default: false
 
 function OpenRs(filePath, Counts) {
     let buf = fs.readFileSync(filePath);
@@ -32,8 +37,6 @@ function OpenRs(filePath, Counts) {
     // Read number of materials
     let nMaterial = data.readInt32LE(); // int = 4 bytes
     say("Number of materials:", nMaterial);
-
-    let PhysOnly = false; // default: false
 
     if (!PhysOnly) {
         //cut
@@ -234,6 +237,120 @@ function Open_Nodes(pNode, data, State) {
     return State;
 }
 
-OpenRs(path.resolve("test", "world-reader", "town.RS"));
+
+function OpenDescription(filePath) {
+    const xmlData = fs.readFileSync(filePath, "utf-8");
+    const json = xmlParser.parse(xmlData, { ignoreAttributes: false });
+    LoadRS2Map(json.XML);
+}
+
+function Open_MaterialList(data) {
+    let ml = data.MATERIALLIST.MATERIAL;
+    let elm = {};
+
+    // Materials[0] initial elm is special
+    elm.texture = null;
+    elm.Diffuse = new rvector(1, 1, 1);
+    elm.dwFlags = 0;
+    Materials.push(elm);
+
+    for (let i = 1; i < ml.length; i++) {
+        const mat = ml[i];
+
+        if (!mat["@_name"]) continue;
+
+        elm = {};
+        elm.Name = mat["@_name"];
+        elm.dwFlags = 0;
+        elm.Diffuse = mat.DIFFUSE;
+        elm.Specular = mat.SPECULAR; // todo: '0.9000000 0.9000000 0.9000000'
+        elm.Ambient = mat.AMBIENT;   // need to parse them
+        elm.Diffuse = mat.DIFFUSEMAP;
+        elm.DiffuseMap = mat.DIFFUSEMAP;
+        // elm.Power = "idk"; // atleast theres no Power in Town.RS.xml
+
+        // if "" (empty str) then update the flag but not when undefined
+        if (mat.ADDITIVE !== undefined) {
+            elm.dwFlags |= 0x0001;
+        }
+        if (mat.USEOPACITY !== undefined) {
+            elm.dwFlags |= 0x0002;
+        }
+        if (mat.TWOSIDED !== undefined) {
+            elm.dwFlags |= 0x0004;
+        }
+        if (mat.USEALPHATEST !== undefined) {
+            elm.dwFlags |= 0x0400;
+        }
+
+        if (!PhysOnly && mat.DIFFUSEMAP) {
+            // load texture
+            // not implemented yet
+            // elm.texture = RCreateBaseTexture(mat.DIFFUSEMAP);
+        }
+
+        Materials.push(elm);
+    }
+
+    say("Loaded", Materials.length, "materials from xml file");
+
+    return true;
+} // [END] open material list function
+
+function Open_LightList(data) {
+    let llist = data.LIGHTLIST.LIGHT;
+    // RTOK_MAX_OBJLIGHT		"obj_"
+
+    for (let i = 1; i < llist.length; i++) {
+        const Light = llist[i];
+
+        if (Light["@_name"].match(/^obj_/)) {
+            StaticObjectLightList.push(Light);
+        } else {
+            StaticMapLightList.push(Light);
+
+            if (Light["@_name"].match(/^sun_omni/)) {
+                let Sunlight = {};
+                Sunlight.Name = Light["@_name"];
+                Sunlight.dwFlags = 0;
+                Sunlight.fAttnEnd = Light.ATTENUATIONEND;
+                Sunlight.fAttnStart = Light.ATTENUATIONSTART;
+                Sunlight.fIntensity = Light.INTENSITY;
+                Sunlight.Position = Light.POSITION; // TODO: need to parse them
+                Sunlight.Color = Light.COLOR;
+
+                if (Light.CASTSHADOW !== undefined) {
+                    Sunlight.dwFlags |= 0x0010;
+                }
+
+                StaticSunLightList.push(Sunlight);
+            }
+        }
+    }
+
+    say("Loaded", llist.length, "lights from xml file")
+
+    return true;
+}
+
+function LoadRS2Map(data) {
+    if (data.MATERIALLIST) Open_MaterialList(data);
+    if (!PhysOnly) {
+        if (data.LIGHTLIST) Open_LightList(data);
+
+        // skip them because these are not that important at this moment
+        // if (data.OBJECTLIST) Open_ObjectList(data);
+        // if (data.OCCLUSIONLIST) Open_ObjectList(data); // elu objects
+        // if (data.OBJECTLIST) Open_OcclusionList(data); // walls, wall partitions
+        // open dummy
+        // set fog
+        // set ambsound (AMBIENTSOUNDLIST)
+    }
+    return true;
+}
+
+// OpenRs(path.resolve("test", "world-reader", "town.RS"));
+OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
+
 // for debug
 // say(checkArr.slice(offset, offset + 40))

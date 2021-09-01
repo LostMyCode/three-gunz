@@ -1,0 +1,11 @@
+{
+  "name": "three-gunz",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/LostMyCode/three-gunz.git",
+  "author": "LostMyCode <studionyna@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fast-xml-parser": "^3.19.0"
+  }
+}
