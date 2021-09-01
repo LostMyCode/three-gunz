@@ -13,103 +13,107 @@ const RM_FLAG_HIDE = 0x0080; // from RealSpace2 -> Include -> RTypes.h
 
 const Materials = [];
 
-let buf = fs.readFileSync(path.resolve("test", "world-reader", "town.RS"));
+function OpenRs(filePath, Counts) {
+    let buf = fs.readFileSync(filePath);
+    let u8a = new Uint8Array(buf);
+    let checkArr = [];
+    u8a.map(v => {
+        checkArr.push(v.toString(16));
+        return v;
+    });
 
-let u8a = new Uint8Array(buf);
-let checkArr = [];
-u8a.map(v => {
-    checkArr.push(v.toString(16));
-    return v;
-});
+    let data = new BufferReader(buf);
 
-let data = new BufferReader(buf);
+    // Read header
+    say("Read ID:", data.readUInt32LE(), "RS_ID:", RS_ID);
 
-// Read header
-say("Read ID:", data.readUInt32LE(), "RS_ID:", RS_ID);
+    say("Read Version:", data.readUInt32LE(), "RS_VERSION", RS_VERSION);
 
-say("Read Version:", data.readUInt32LE(), "RS_VERSION", RS_VERSION);
+    // Read number of materials
+    let nMaterial = data.readInt32LE(); // int = 4 bytes
+    say("Number of materials:", nMaterial);
 
-// Read number of materials
-let nMaterial = data.readInt32LE(); // int = 4 bytes
-say("Number of materials:", nMaterial);
+    let PhysOnly = false; // default: false
 
-let PhysOnly = false; // default: false
-
-if (!PhysOnly) {
-    //cut
-}
-
-let lc = 0;
-for (let i = 1; i < nMaterial + 1; i++) {
-    let str = "";
-    let c;
-    while (c = data.readUInt8(), c != 0) {
-        str += String.fromCharCode(c);
-    }
-    say(lc++, "file:", str);
-}
-
-// Open_ConvexPolygons
-let NumConvexPolygons = data.readInt32LE();
-
-let nConvexVertices = data.readInt32LE();
-
-say("Convex polygons:", NumConvexPolygons, nConvexVertices);
-
-let ConvexPolygons = new Array(NumConvexPolygons).fill({});
-for (let i = 0; i < NumConvexPolygons; i++) {
-    ConvexPolygons[i].nMaterial = data.readInt32LE();
-    ConvexPolygons[i].nMaterial += 2;
-    ConvexPolygons[i].dwFlags = data.readUInt32LE();
-
-    // rplane(float a, float b, float c, float d)
-    const [a, b, c, d] = data.readStructFloatLE(4);
-    ConvexPolygons[i].plane = {};
-    ConvexPolygons[i].plane.a = a;
-    ConvexPolygons[i].plane.b = b;
-    ConvexPolygons[i].plane.c = c;
-    ConvexPolygons[i].plane.d = d;
-
-    ConvexPolygons[i].fArea = data.readFloatLE();
-    ConvexPolygons[i].nVertices = data.readInt32LE();
-
-    for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
-        // rvector = float x 3 (?)
-        const x = data.readFloatLE();
-        const y = data.readFloatLE();
-        const z = data.readFloatLE();
-        // say(x, y, z);
+    if (!PhysOnly) {
+        //cut
     }
 
-    for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
-        // rvector = float x 3 (?)
-        data.readFloatLE();
-        data.readFloatLE();
-        data.readFloatLE();
+    let lc = 0;
+    for (let i = 1; i < nMaterial + 1; i++) {
+        let str = "";
+        let c;
+        while (c = data.readUInt8(), c != 0) {
+            str += String.fromCharCode(c);
+        }
+        say(lc++, "file:", str);
     }
 
+    Open_ConvexPolygons(data);
+
+    // Read counts
+    let Nodes = data.readInt32LE();
+    say("Bsp Nodes:", Nodes);
+
+    let Polygons = data.readInt32LE();
+    let Vertices = data.readInt32LE();
+    let Indices = data.readInt32LE();
+
+    let NodeCount = data.readInt32LE();
+    let PolygonCount = data.readInt32LE();
+    let NumVertices = data.readInt32LE();
+    let NumIndices = data.readInt32LE();
+
+    // cut oc resize thing
+
+    say(NodeCount, PolygonCount, NumVertices, NumIndices);
 }
 
-// [END] Open_ConvexPolygons
+/**
+ * @param {BufferReader} data 
+ */
+function Open_ConvexPolygons(data) {
+    let NumConvexPolygons = data.readInt32LE();
+    let nConvexVertices = data.readInt32LE();
 
-// Read counts
-let Nodes = data.readInt32LE();
-say("Bsp Nodes:", Nodes);
+    say("Convex polygons:", NumConvexPolygons, nConvexVertices);
 
-let Polygons = data.readInt32LE();
-let Vertices = data.readInt32LE();
-let Indices = data.readInt32LE();
+    let ConvexPolygons = new Array(NumConvexPolygons).fill({});
+    for (let i = 0; i < NumConvexPolygons; i++) {
+        ConvexPolygons[i].nMaterial = data.readInt32LE();
+        ConvexPolygons[i].nMaterial += 2;
+        ConvexPolygons[i].dwFlags = data.readUInt32LE();
 
-let NodeCount = data.readInt32LE();
-let PolygonCount = data.readInt32LE();
-let NumVertices = data.readInt32LE();
-let NumIndices = data.readInt32LE();
+        // rplane(float a, float b, float c, float d)
+        const [a, b, c, d] = data.readStructFloatLE(4);
+        ConvexPolygons[i].plane = {};
+        ConvexPolygons[i].plane.a = a;
+        ConvexPolygons[i].plane.b = b;
+        ConvexPolygons[i].plane.c = c;
+        ConvexPolygons[i].plane.d = d;
 
-// cut oc resize thing
+        ConvexPolygons[i].fArea = data.readFloatLE();
+        ConvexPolygons[i].nVertices = data.readInt32LE();
 
-say(NodeCount, PolygonCount, NumVertices, NumIndices);
+        for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
+            // rvector = float x 3 (?)
+            const x = data.readFloatLE();
+            const y = data.readFloatLE();
+            const z = data.readFloatLE();
+            // say(x, y, z);
+        }
 
-// open nodes
+        for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
+            // rvector = float x 3 (?)
+            data.readFloatLE();
+            data.readFloatLE();
+            data.readFloatLE();
+        }
+
+    }
+} // [END] Open_ConvexPolygons
+
+
 /**
  * 
  * @param {RSBspNode} pNode 
@@ -230,7 +234,6 @@ function Open_Nodes(pNode, data, State) {
     return State;
 }
 
-// [END] OpenRs
-
+OpenRs(path.resolve("test", "world-reader", "town.RS"));
 // for debug
 // say(checkArr.slice(offset, offset + 40))
