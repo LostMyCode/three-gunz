@@ -2,11 +2,16 @@ const fs = require("fs");
 const path = require('path');
 const BufferReader = require("./BufferReader");
 const say = require("./logger");
+const { rvector, BSPNORMALVERTEX, vec2, DotProduct } = require("./Structs");
 
 console.log("[map read] .RS read test");
 
 const RS_ID = 0x12345678;
 const RS_VERSION = 7;
+
+const RM_FLAG_HIDE = 0x0080; // from RealSpace2 -> Include -> RTypes.h
+
+const Materials = [];
 
 let buf = fs.readFileSync(path.resolve("test", "world-reader", "town.RS"));
 
@@ -138,11 +143,91 @@ function Open_Nodes(pNode, data, State) {
     }
 
     pNode.nPolygon = data.readInt32LE();
-    
+
     if (pNode.nPolygon) {
         pNode.pInfo = State.Info;
         State.Info += pNode.nPolygon;
+
+        let pInfo = pNode.pInfo;
+
+        for (let i = 0; i < pNode.nPolygon; i++) {
+            let mat = data.readInt32LE();
+            pInfo.nConvexPolygon = data.readInt32LE();
+            pInfo.dwFlags = data.readUInt32LE();
+            pInfo.nVertices = data.readInt32LE();
+
+            let pVertex = pInfo.pVertices = State.Vertices[State.verticesOffset];
+
+            for (let j = 0; j < pInfo.nVertices; j++) {
+                /**
+                 * @type {rvector}
+                 */
+                let normal = new rvector();
+                let x, y, z;
+
+                // read vertex position
+                [x, y, z] = readStructFloatLE(3);
+                pVertex.x = x;
+                pVertex.y = y;
+                pVertex.z = z;
+
+                // read vertex normal
+                [x, y, z] = readStructFloatLE(3);
+                normal.x = x;
+                normal.y = y;
+                normal.z = z;
+
+                // read texture coordinates (diffuse map)
+                [pVertex.tu1, pVertex.tv1] = readStructFloatLE(2);
+
+                // read texture lightmap
+                [pVertex.tu2, pVertex.tv2] = readStructFloatLE(2);
+
+                if (State.Normals) {
+                    let normalVertex = new BSPNORMALVERTEX(
+                        new rvector(pVertex.x, pVertex.y, pVertex.z),
+                        normal,
+                        new vec2(pVertex.tu1, pVertex.tv1),
+                        new vec2(pVertex.tu2, pVertex.tv2)
+                    );
+                    State.Normals.push(normalVertex);
+                }
+
+                pVertex.verticesOffset++;
+            }
+
+            // idk if this is correct or not
+            // State.verticesOffset += pInfo.nVertices;
+
+            let nor = new rvector();
+            [nor.x, nor.y, nor.z] = data.readFloatLE(3);
+            pInfo.plane.a = nor.x;
+            pInfo.plane.b = nor.y;
+            pInfo.plane.c = nor.z;
+            pInfo.plane.b = -DotProduct(nor, pInfo.pVertices[0].Coord());
+
+            if ((pInfo.dwFlags & RM_FLAG_HIDE) != 0) {
+                pInfo.nMaterial = -1;
+            } else {
+                let nMaterial = mat + 1;
+
+                if (nMaterial < 0 || nMaterial >= Materials.length) nMaterial = 0;
+
+                pInfo.nMaterial = nMaterial;
+                pInfo.dwFlags |= Materials[nMaterial].dwFlags;
+            }
+
+            pInfo.nPolygonID = State.PolygonID;
+            pInfo.nLightmapTexture = 0;
+
+            // update pInfo offset
+            pNode.pInfoOffset++;
+
+            State.PolygonID++; // int
+        }
     }
+
+    return State;
 }
 
 class OpenNodeState {
