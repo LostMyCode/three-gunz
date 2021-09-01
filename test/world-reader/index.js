@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require('path');
 const BufferReader = require("./BufferReader");
 const say = require("./logger");
-const { rvector, BSPNORMALVERTEX, vec2, DotProduct } = require("./Structs");
+const { rvector, BSPNORMALVERTEX, vec2, DotProduct, OpenNodesState } = require("./Structs");
 
 console.log("[map read] .RS read test");
 
@@ -114,7 +114,7 @@ say(NodeCount, PolygonCount, NumVertices, NumIndices);
  * 
  * @param {RSBspNode} pNode 
  * @param {BufferReader} data 
- * @param {OpenNodeState} State 
+ * @param {OpenNodesState} State 
  */
 function Open_Nodes(pNode, data, State) {
     const bound = data.readStructFloatLE(6);
@@ -229,22 +229,6 @@ function Open_Nodes(pNode, data, State) {
 
     return State;
 }
-
-class OpenNodeState {
-    constructor() {
-        this.Vertices = [];
-        this.Node = [];
-        this.Info = "idk";
-
-        this.nodeOffset = 0;
-    }
-
-    get nextNode() {
-        return this.Node[++this.nodeOffset];
-    }
-}
-
-
 
 // [END] OpenRs
 

@@ -43,9 +43,31 @@ function DotProduct(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+class OpenNodesState {
+    constructor(Vertices, Node, Info, Normals) {
+        this.Vertices = Vertices;
+        this.Node = Node;
+        this.Info = Info;
+
+        /**
+         * @type {BSPNORMALVERTEX[]}
+         */
+        this.Normals = Normals;
+
+        this.PolygonID = 0;
+
+        this.nodeOffset = 0;
+    }
+
+    get nextNode() {
+        return this.Node[++this.nodeOffset];
+    }
+}
+
 module.exports = {
     rvector,
     BSPNORMALVERTEX,
     vec2,
     DotProduct,
+    OpenNodesState
 };
