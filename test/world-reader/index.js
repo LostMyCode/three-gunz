@@ -29,6 +29,7 @@ const OcNormalVertices = [];
 const BspVertices = [];
 const BspRoot = [];
 const BspInfo = [];
+const TexFileNames = [];
 const PhysOnly = false; // default: false
 
 /**
@@ -281,7 +282,7 @@ function Open_MaterialList(data) {
     elm.dwFlags = 0;
     Materials.push(elm);
 
-    for (let i = 1; i < ml.length; i++) {
+    for (let i = 0; i < ml.length; i++) {
         const mat = ml[i];
 
         if (!mat["@_name"]) continue;
@@ -295,6 +296,8 @@ function Open_MaterialList(data) {
         elm.Diffuse = mat.DIFFUSEMAP;
         elm.DiffuseMap = mat.DIFFUSEMAP;
         // elm.Power = "idk"; // atleast theres no Power in Town.RS.xml
+
+        if (mat.DIFFUSEMAP) TexFileNames.push(mat.DIFFUSEMAP);
 
         // if "" (empty str) then update the flag but not when undefined
         if (mat.ADDITIVE !== undefined) {
