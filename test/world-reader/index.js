@@ -3,7 +3,7 @@ const path = require('path');
 const xmlParser = require("fast-xml-parser");
 const BufferReader = require("./BufferReader");
 const say = require("./logger");
-const { rvector, BSPNORMALVERTEX, vec2, DotProduct, OpenNodesState } = require("./Structs");
+const { rvector, BSPNORMALVERTEX, vec2, DotProduct, OpenNodesState, BspCounts, RPOLYGONINFO, BSPVERTEX } = require("./Structs");
 
 console.log("[world-reader] GunZ world reading test");
 
@@ -16,8 +16,20 @@ const Materials = [];
 const StaticObjectLightList = [];
 const StaticMapLightList = [];
 const StaticSunLightList = [];
+const ConvexPolygons = [];
+const ConvexVertices = [];
+const ConvexNormals = [];
+const OcRoot = [];
+const OcInfo = [];
+const OcVertices = [];
+const OcIndices = [];
+const OcNormalVertices = [];
 const PhysOnly = false; // default: false
 
+/**
+ * @param {string} filePath 
+ * @param {BspCounts} Counts 
+ */
 function OpenRs(filePath, Counts) {
     let buf = fs.readFileSync(filePath);
     let u8a = new Uint8Array(buf);
@@ -55,19 +67,25 @@ function OpenRs(filePath, Counts) {
     Open_ConvexPolygons(data);
 
     // Read counts
-    let Nodes = data.readInt32LE();
-    say("Bsp Nodes:", Nodes);
+    Counts.Nodes = data.readInt32LE();
+    say("Bsp Nodes:", Counts.Nodes);
 
-    let Polygons = data.readInt32LE();
-    let Vertices = data.readInt32LE();
-    let Indices = data.readInt32LE();
+    Counts.Polygons = data.readInt32LE();
+    Counts.Vertices = data.readInt32LE();
+    Counts.Indices = data.readInt32LE();
 
     let NodeCount = data.readInt32LE();
     let PolygonCount = data.readInt32LE();
     let NumVertices = data.readInt32LE();
     let NumIndices = data.readInt32LE();
 
-    // cut oc resize thing
+    Open_Nodes(
+        OcRoot, data,
+        new OpenNodesState(
+            OcVertices, OcRoot,
+            OcInfo, OcNormalVertices
+        )
+    );
 
     say(NodeCount, PolygonCount, NumVertices, NumIndices);
 }
@@ -81,36 +99,34 @@ function Open_ConvexPolygons(data) {
 
     say("Convex polygons:", NumConvexPolygons, nConvexVertices);
 
-    let ConvexPolygons = new Array(NumConvexPolygons).fill({});
     for (let i = 0; i < NumConvexPolygons; i++) {
-        ConvexPolygons[i].nMaterial = data.readInt32LE();
-        ConvexPolygons[i].nMaterial += 2;
-        ConvexPolygons[i].dwFlags = data.readUInt32LE();
+        const cp = {};
+        cp.nMaterial = data.readInt32LE();
+        cp.nMaterial += 2;
+        cp.dwFlags = data.readUInt32LE();
 
         // rplane(float a, float b, float c, float d)
         const [a, b, c, d] = data.readStructFloatLE(4);
-        ConvexPolygons[i].plane = {};
-        ConvexPolygons[i].plane.a = a;
-        ConvexPolygons[i].plane.b = b;
-        ConvexPolygons[i].plane.c = c;
-        ConvexPolygons[i].plane.d = d;
+        cp.plane = {};
+        cp.plane.a = a;
+        cp.plane.b = b;
+        cp.plane.c = c;
+        cp.plane.d = d;
 
-        ConvexPolygons[i].fArea = data.readFloatLE();
-        ConvexPolygons[i].nVertices = data.readInt32LE();
+        cp.fArea = data.readFloatLE();
+        cp.nVertices = data.readInt32LE();
 
-        for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
-            // rvector = float x 3 (?)
-            const x = data.readFloatLE();
-            const y = data.readFloatLE();
-            const z = data.readFloatLE();
-            // say(x, y, z);
+        for (let j = 0; j < cp.nVertices; j++) {
+            // rvector = float x 3
+            const cv = new rvector();
+            [cv.x, cv.y, cv.z] = data.readStructFloatLE(3);
+            ConvexVertices.push(cv);
         }
 
-        for (let j = 0; j < ConvexPolygons[i].nVertices; j++) {
-            // rvector = float x 3 (?)
-            data.readFloatLE();
-            data.readFloatLE();
-            data.readFloatLE();
+        for (let j = 0; j < cp.nVertices; j++) {
+            const cn = new rvector();
+            [cn.x, cn.y, cn.z] = data.readStructFloatLE(3);
+            ConvexNormals.push(cn);
         }
 
     }
@@ -124,46 +140,56 @@ function Open_ConvexPolygons(data) {
  * @param {OpenNodesState} State 
  */
 function Open_Nodes(pNode, data, State) {
+    let node = {};
+    pNode.push(node);
+
     const bound = data.readStructFloatLE(6);
-    pNode.bbTree = [];
-    pNode.bbTree.push(...bound);
+    node.bbTree = [];
+    node.bbTree.push(...bound);
 
     const [a, b, c, d] = data.readStructFloatLE(4);
-    pNode.plane = {};
-    pNode.plane.a = a;
-    pNode.plane.b = b;
-    pNode.plane.c = c;
-    pNode.plane.d = d;
+    node.plane = {};
+    node.plane.a = a;
+    node.plane.b = b;
+    node.plane.c = c;
+    node.plane.d = d;
 
     // branch
     let flag = data.readUInt8();
     if (flag) {
         // open front node
-        pNode.m_pPositive = State.nextNode;
-        State = Open_Nodes(pNode.m_pPositive, data, State);
+        let branch = [];
+        State.Node.push(branch);
+        node.m_pPositive = branch;
+        State = Open_Nodes(node.m_pPositive, data, State);
     }
     flag = data.readUInt8();
     if (flag) {
         // open back node
-        pNode.m_pNegative = State.nextNode;
-        State = Open_Nodes(pNode.m_pNegative, data, State);
+        let branch = [];
+        State.Node.push(branch);
+        node.m_pNegative = branch;
+        State = Open_Nodes(node.m_pNegative, data, State);
     }
 
-    pNode.nPolygon = data.readInt32LE();
+    node.nPolygon = data.readInt32LE();
 
-    if (pNode.nPolygon) {
-        pNode.pInfo = State.Info;
-        State.Info += pNode.nPolygon;
+    if (node.nPolygon) {
+        // node.pInfo = State.Info;
+        // State.Info += node.nPolygon;
+        node.pInfo = new RPOLYGONINFO();
 
-        let pInfo = pNode.pInfo;
+        let pInfo = node.pInfo;
 
-        for (let i = 0; i < pNode.nPolygon; i++) {
+        for (let i = 0; i < node.nPolygon; i++) {
             let mat = data.readInt32LE();
             pInfo.nConvexPolygon = data.readInt32LE();
             pInfo.dwFlags = data.readUInt32LE();
             pInfo.nVertices = data.readInt32LE();
 
-            let pVertex = pInfo.pVertices = State.Vertices[State.verticesOffset];
+            let pVertex = new BSPVERTEX();
+            pInfo.pVertices.push(pVertex);
+            State.Vertices.push(pVertex);
 
             for (let j = 0; j < pInfo.nVertices; j++) {
                 /**
@@ -173,22 +199,22 @@ function Open_Nodes(pNode, data, State) {
                 let x, y, z;
 
                 // read vertex position
-                [x, y, z] = readStructFloatLE(3);
+                [x, y, z] = data.readStructFloatLE(3);
                 pVertex.x = x;
                 pVertex.y = y;
                 pVertex.z = z;
 
                 // read vertex normal
-                [x, y, z] = readStructFloatLE(3);
+                [x, y, z] = data.readStructFloatLE(3);
                 normal.x = x;
                 normal.y = y;
                 normal.z = z;
 
                 // read texture coordinates (diffuse map)
-                [pVertex.tu1, pVertex.tv1] = readStructFloatLE(2);
+                [pVertex.tu1, pVertex.tv1] = data.readStructFloatLE(2);
 
                 // read texture lightmap
-                [pVertex.tu2, pVertex.tv2] = readStructFloatLE(2);
+                [pVertex.tu2, pVertex.tv2] = data.readStructFloatLE(2);
 
                 if (State.Normals) {
                     let normalVertex = new BSPNORMALVERTEX(
@@ -199,18 +225,15 @@ function Open_Nodes(pNode, data, State) {
                     );
                     State.Normals.push(normalVertex);
                 }
-
-                pVertex.verticesOffset++;
             }
 
-            // idk if this is correct or not
-            // State.verticesOffset += pInfo.nVertices;
-
             let nor = new rvector();
-            [nor.x, nor.y, nor.z] = data.readFloatLE(3);
+            [nor.x, nor.y, nor.z] = data.readStructFloatLE(3);
+            pInfo.plane = {};
             pInfo.plane.a = nor.x;
             pInfo.plane.b = nor.y;
             pInfo.plane.c = nor.z;
+            // say(pInfo.pVertices[0], pInfo.pVertices.length)
             pInfo.plane.b = -DotProduct(nor, pInfo.pVertices[0].Coord());
 
             if ((pInfo.dwFlags & RM_FLAG_HIDE) != 0) {
@@ -227,8 +250,7 @@ function Open_Nodes(pNode, data, State) {
             pInfo.nPolygonID = State.PolygonID;
             pInfo.nLightmapTexture = 0;
 
-            // update pInfo offset
-            pNode.pInfoOffset++;
+            State.Info.push(pInfo);
 
             State.PolygonID++; // int
         }
@@ -349,8 +371,8 @@ function LoadRS2Map(data) {
     return true;
 }
 
-// OpenRs(path.resolve("test", "world-reader", "town.RS"));
 OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
+OpenRs(path.resolve("test", "world-reader", "town.RS"), new BspCounts());
 
 // for debug
 // say(checkArr.slice(offset, offset + 40))
