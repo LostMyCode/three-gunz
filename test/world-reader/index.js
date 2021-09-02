@@ -180,23 +180,22 @@ function Open_Nodes(pNode, data, State) {
     node.nPolygon = data.readInt32LE();
 
     if (node.nPolygon) {
-        // node.pInfo = State.Info;
+        node.pInfo = [];
         // State.Info += node.nPolygon;
-        node.pInfo = new RPOLYGONINFO();
-
-        let pInfo = node.pInfo;
+        // node.pInfo = new RPOLYGONINFO();
 
         for (let i = 0; i < node.nPolygon; i++) {
+            let pInfo = new RPOLYGONINFO();
             let mat = data.readInt32LE();
             pInfo.nConvexPolygon = data.readInt32LE();
             pInfo.dwFlags = data.readUInt32LE();
             pInfo.nVertices = data.readInt32LE();
 
-            let pVertex = new BSPVERTEX();
-            pInfo.pVertices.push(pVertex);
-            State.Vertices.push(pVertex);
-
             for (let j = 0; j < pInfo.nVertices; j++) {
+                let pVertex = new BSPVERTEX();
+                pInfo.pVertices.push(pVertex);
+                State.Vertices.push(pVertex);
+
                 /**
                  * @type {rvector}
                  */
@@ -256,6 +255,7 @@ function Open_Nodes(pNode, data, State) {
             pInfo.nLightmapTexture = 0;
 
             State.Info.push(pInfo);
+            node.pInfo.push(pInfo);
 
             State.PolygonID++; // int
         }
