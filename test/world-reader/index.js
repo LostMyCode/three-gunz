@@ -9,6 +9,8 @@ console.log("[world-reader] GunZ world reading test");
 
 const RS_ID = 0x12345678;
 const RS_VERSION = 7;
+const RBSP_ID = 0x35849298;
+const RBSP_VERSION = 2;
 
 const RM_FLAG_HIDE = 0x0080; // from RealSpace2 -> Include -> RTypes.h
 
@@ -24,6 +26,9 @@ const OcInfo = [];
 const OcVertices = [];
 const OcIndices = [];
 const OcNormalVertices = [];
+const BspVertices = [];
+const BspRoot = [];
+const BspInfo = [];
 const PhysOnly = false; // default: false
 
 /**
@@ -371,8 +376,47 @@ function LoadRS2Map(data) {
     return true;
 }
 
+/**
+ * @param {string} filePath 
+ * @param {BspCounts} Counts 
+ */
+function OpenBsp(filePath, Counts) {
+    let buf = fs.readFileSync(filePath);
+    let data = new BufferReader(buf);
+
+    // Read header
+    say("Read ID:", data.readUInt32LE(), "RBSP_ID:", RBSP_ID);
+    say("Read Version:", data.readUInt32LE(), "RBSP_VERSION", RBSP_VERSION);
+
+    const nBspNodeCount = data.readInt32LE();
+    const nBspPolygon = data.readInt32LE();
+    const nBspVertices = data.readInt32LE();
+    const nBspIndices = data.readInt32LE();
+
+    if (
+        Counts.Nodes != nBspNodeCount || Counts.Polygons != nBspPolygon ||
+        Counts.Vertices != nBspVertices || Counts.Indices != nBspIndices
+    ) {
+        say("[OpenBsp]", "Error: Counts in .rs file didn't match counts in bsp file");
+        return false;
+    }
+
+    Open_Nodes(
+        BspRoot, data,
+        new OpenNodesState(
+            BspVertices, BspRoot, BspInfo
+        )
+    );
+
+    say("[OpenBsp]", "Bsp nodes opened.");
+
+    return true;
+}
+
+const bspc = new BspCounts();
 OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
-OpenRs(path.resolve("test", "world-reader", "town.RS"), new BspCounts());
+OpenRs(path.resolve("test", "world-reader", "town.RS"), bspc);
+OpenBsp(path.resolve("test", "world-reader", "town.RS.bsp"), bspc);
 
 // for debug
 // say(checkArr.slice(offset, offset + 40))
