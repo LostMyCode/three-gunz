@@ -164,7 +164,7 @@ function Open_Nodes(pNode, data, State) {
     if (flag) {
         // open front node
         let branch = [];
-        State.Node.push(branch);
+        // State.Node.push(branch);
         node.m_pPositive = branch;
         State = Open_Nodes(node.m_pPositive, data, State);
     }
@@ -172,7 +172,7 @@ function Open_Nodes(pNode, data, State) {
     if (flag) {
         // open back node
         let branch = [];
-        State.Node.push(branch);
+        // State.Node.push(branch);
         node.m_pNegative = branch;
         State = Open_Nodes(node.m_pNegative, data, State);
     }
