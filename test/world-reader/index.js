@@ -413,10 +413,37 @@ function OpenBsp(filePath, Counts) {
     return true;
 }
 
+function CreatePolygonTable(pNode, Indices) {
+    pNode = pNode || OcRoot;
+    Indices = Indices || OcIndices;
+
+    pNode = pNode[0];
+
+    if (pNode.m_pPositive)
+        CreatePolygonTable(pNode.m_pPositive, Indices);
+
+    if (pNode.m_pNegative)
+        CreatePolygonTable(pNode.m_pNegative, Indices);
+
+    if (pNode.nPolygon) {
+        for (let i = 0; i < pNode.nPolygon; i++) {
+            // let pInd = Indices;
+            let pInd = [];
+            let pInfo = pNode.pInfo[i];
+
+            for (let j = 0; j < pInfo.nVertices - 2; j++) {
+                pInd.push(0, j + 1, j + 2);
+            }
+
+            pInfo.pInd = pInd;
+        }
+    }
+}
+
 const bspc = new BspCounts();
 OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
 OpenRs(path.resolve("test", "world-reader", "town.RS"), bspc);
 OpenBsp(path.resolve("test", "world-reader", "town.RS.bsp"), bspc);
-
+CreatePolygonTable();
 // for debug
 // say(checkArr.slice(offset, offset + 40))
