@@ -64,10 +64,20 @@ class OpenNodesState {
     }
 }
 
+class BspCounts {
+    constructor() {
+        this.Nodes = 0;
+        this.Polygons = 0;
+        this.Vertices = 0;
+        this.Indices = 0;
+    }
+}
+
 module.exports = {
     rvector,
     BSPNORMALVERTEX,
     vec2,
     DotProduct,
-    OpenNodesState
+    OpenNodesState,
+    BspCounts,
 };
