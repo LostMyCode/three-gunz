@@ -29,7 +29,7 @@ const OcNormalVertices = [];
 const BspVertices = [];
 const BspRoot = [];
 const BspInfo = [];
-const TexFileNames = [];
+const MaterialList = [];
 const PhysOnly = false; // default: false
 
 /**
@@ -291,13 +291,13 @@ function Open_MaterialList(data) {
         elm.Name = mat["@_name"];
         elm.dwFlags = 0;
         elm.Diffuse = mat.DIFFUSE;
-        elm.Specular = mat.SPECULAR; // todo: '0.9000000 0.9000000 0.9000000'
-        elm.Ambient = mat.AMBIENT;   // need to parse them
-        elm.Diffuse = mat.DIFFUSEMAP;
+        elm.Specular = mat.SPECULAR ? mat.SPECULAR.split(" ")[0] : null; // '0.9000000 0.9000000 0.9000000'
+        elm.Ambient = mat.AMBIENT ? mat.AMBIENT.split(" ")[0] : null;
+        elm.Diffuse = mat.DIFFUSE ? mat.DIFFUSE.split(" ")[0] : null;
         elm.DiffuseMap = mat.DIFFUSEMAP;
         // elm.Power = "idk"; // atleast theres no Power in Town.RS.xml
 
-        if (mat.DIFFUSEMAP) TexFileNames.push(mat.DIFFUSEMAP);
+        if (mat.DIFFUSEMAP) MaterialList.push(elm);
 
         // if "" (empty str) then update the flag but not when undefined
         if (mat.ADDITIVE !== undefined) {
@@ -448,5 +448,8 @@ OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
 OpenRs(path.resolve("test", "world-reader", "town.RS"), bspc);
 OpenBsp(path.resolve("test", "world-reader", "town.RS.bsp"), bspc);
 CreatePolygonTable();
-// for debug
-// say(checkArr.slice(offset, offset + 40))
+
+fs.writeFileSync("./rs_map_obj_data.json", JSON.stringify({
+    OcRoot,
+    MaterialList
+}));
