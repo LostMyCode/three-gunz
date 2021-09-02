@@ -73,6 +73,42 @@ class BspCounts {
     }
 }
 
+class RPOLYGONINFO {
+    constructor() {
+        this.plane = {} // rplane
+        this.nMaterial = 0;
+        this.nConvexPolygon = 0;
+        this.nLightmapTexture = 0;
+        this.nPolygonID = 0;
+        this.dwFlags = 0; // u32
+
+        this.pVertices = [] // BSPVERTEX array?
+        this.nVertices = 0;
+        this.nIndicesPos = 0;
+    }
+}
+
+class BSPVERTEX {
+    constructor() {
+        // float
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.tu1 = 0;
+        this.tv1 = 0;
+        this.tu2 = 0;
+        this.tv2 = 0;
+    }
+
+    Coord() {
+        const coord = new rvector();
+        coord.x = this.x;
+        coord.y = this.y;
+        coord.z = this.z;
+        return coord;
+    }
+}
+
 module.exports = {
     rvector,
     BSPNORMALVERTEX,
@@ -80,4 +116,6 @@ module.exports = {
     DotProduct,
     OpenNodesState,
     BspCounts,
+    RPOLYGONINFO,
+    BSPVERTEX,
 };
