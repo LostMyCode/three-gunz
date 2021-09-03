@@ -27,7 +27,7 @@ Demo URL: https://gunz.sigr.io/test/web-world/
 
 Codes: https://github.com/LostMyCode/three-gunz/tree/master/test/web-world
 
-I finally have done to made GunZ Map Reader(Converter)!!
+I finally have made GunZ Map Reader(Converter)!!
 
 but I'm still working on Lightmap thing
 
