@@ -29,6 +29,14 @@ class BufferReader {
         return value;
     }
 
+    readStructUInt8(count) {
+        const arr = [];
+        for (let i = 0; i < count; i++) {
+            arr.push(this.readUInt8());
+        }
+        return arr;
+    }
+
     /**
      * @param {number} count - Loop count
      * @returns Struct array

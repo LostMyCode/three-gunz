@@ -60,25 +60,36 @@ function init(data) {
 
     // カメラを作成
     camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
-    camera.position.set(0, 100, 1400);
+    // camera.position.set(0, 100, 1400);
+    camera.position.x = -0.00022959756808358926;
+    camera.position.y = -5059.912198446767;
+    camera.position.z = 0.0050549255682858195;
+
+    camera.rotation.x = 1.5707953277804136;
+    camera.rotation.y = -4.537580082161764e-8;
+    camera.rotation.z = 0.04538936754410236;
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    const loader = new THREE.DDSLoader();
-    // const texture = loader.load('./gzd_map_town_car_b02.jpg');
-    // const texture = loader.load("./gzd_map_town_car_b02.bmp.dds");
+    const loader = new THREE.TextureLoader();
+    const ddsLoader = new THREE.DDSLoader();
 
+    const lightmapTex = ddsLoader.load("./Town/lm_test.dds");
     function drawGeo(pInfo) {
         // if (node.nPolygon) console.log(node);
         const geometry = new THREE.BufferGeometry();
 
         let positions = [];
         let uvs = [];
+        let uvs2 = [];
+        let normals = [];
         let indices = new Uint16Array(pInfo.pInd);
         for (let polyVertex of pInfo.pVertices) {
             // geometry.vertices.push(new THREE.Vector(polyVertex.x, polyVertex.y, polyVertex.z));
             positions.push(polyVertex.x, polyVertex.y, polyVertex.z)
             uvs.push(polyVertex.tu1, polyVertex.tv1);
+            uvs2.push(polyVertex.tu2, polyVertex.tv2);
+            normals.push(polyVertex.normal.x, polyVertex.normal.y, polyVertex.normal.z);
         }
         geometry.setAttribute(
             "position",
@@ -86,8 +97,16 @@ function init(data) {
         );
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         geometry.setAttribute(
+            'normal',
+            new THREE.BufferAttribute(new Float32Array(normals), 3)
+        );
+        geometry.setAttribute(
             "uv",
             new THREE.BufferAttribute(new Float32Array(uvs), 2)
+        );
+        geometry.setAttribute(
+            "uv2",
+            new THREE.BufferAttribute(new Float32Array(uvs2), 2)
         );
 
         let texture;
@@ -96,9 +115,9 @@ function init(data) {
         if (texFileName) {
             texFileName = texFileName.replace(/ /g, "");
             if (texFileName.includes("../")) {
-                texture = loader.load(`${texFileName.replace(/\.\.\//, "./")}.dds`);
+                texture = ddsLoader.load(`${texFileName.replace(/\.\.\//, "./")}.dds`);
             } else {
-                texture = loader.load(`./Town/${texFileName}.dds`);
+                texture = ddsLoader.load(`./Town/${texFileName}.dds`);
             }
         }
         if (!texture) console.log("?")
@@ -106,22 +125,33 @@ function init(data) {
         texture.offset.set(0, 0);
         texture.repeat.set(1, 1);
 
+        let lightMapTexture = null;
+        if (pInfo.nLightmapTexture != undefined) {
+            lightMapTexture = lightmapTex;
+        }
+
         const showWireFrame = true
         // console.log(texture)
-        // const material = new THREE.MeshBasicMaterial({ color: getRandomColor(), side: THREE.DoubleSide });
+        // const material = new THREE.MeshBasicMaterial({ color: getRandomColor(), side: THREE.DoubleSide, lightMap: lightMapTexture });
         // const material = new THREE.MeshBasicMaterial({ color: 0x6699FF, wireframe: showWireFrame });
         // const material = new THREE.MeshBasicMaterial(withTex);
         /* const material = new THREE.MeshBasicMaterial({
-            map: texture, side: THREE.DoubleSide
+            map: texture,
+            side: THREE.BackSide,
+            lightMap: lightMapTexture,
+            lightMapIntensity: 1,
         }); */
         const material = new THREE.MeshPhongMaterial({
-            map: texture, side: THREE.DoubleSide,
-            // specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]),
+            map: texture, 
+            side: THREE.BackSide,
+            lightMap: lightMapTexture,
+            color: rgb2hex([0.5882353, 0.5882353, 0.5882353]),
+            specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]),
         });
         const plane = new THREE.Mesh(geometry, material);
         scene.add(plane);
 
-        geometry.computeVertexNormals();
+        // geometry.computeVertexNormals();
         // geometry.computeBoundingBox()
         // console.log(geometry.boundingBox)
         // console.log(positions);
@@ -143,16 +173,24 @@ function init(data) {
         }
     }
 
+    // renderer.shadowMap.enabled = true;
 
-    renderer.gammaOutput = true;
-    renderer.gammaFactor = 2.2;
+    /* const slight = new THREE.PointLight(0xffffff, 1);
+    slight.position.set(1100, 100, 2500);
+    slight.castShadow = true;
+    scene.add(slight); */
 
+    /* const sphereSize = 5;
+    const pointLightHelper = new THREE.PointLightHelper(slight, sphereSize);
+    scene.add(pointLightHelper); */
 
-    // 平行光源
-    // const light = new THREE.DirectionalLight(0xFFFFFF);
+    let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 ); 
+    hemiLight.position.set(-7188.0190430, 6539.0439453, 22334.4062500);
+    hemiLight.castShadow = true;
+    scene.add(hemiLight);
 
     const light = new THREE.AmbientLight(0xffffff, 1);
-    light.intensity = 1; // 光の強さを倍に
+    light.intensity = .4; // 光の強さ
     light.position.set(1, 1, 1);
     scene.add(light);
 
