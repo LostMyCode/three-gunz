@@ -11,6 +11,8 @@ const RS_ID = 0x12345678;
 const RS_VERSION = 7;
 const RBSP_ID = 0x35849298;
 const RBSP_VERSION = 2;
+const R_LM_ID = 0x30671804;
+const R_LM_VERSION = 3;
 
 const RM_FLAG_HIDE = 0x0080; // from RealSpace2 -> Include -> RTypes.h
 
@@ -30,6 +32,7 @@ const BspVertices = [];
 const BspRoot = [];
 const BspInfo = [];
 const MaterialList = [];
+const LightmapTextures = [];
 const PhysOnly = false; // default: false
 
 /**
@@ -229,6 +232,7 @@ function Open_Nodes(pNode, data, State) {
                         new vec2(pVertex.tu2, pVertex.tv2)
                     );
                     State.Normals.push(normalVertex);
+                    pVertex.normal = normal;
                 }
             }
 
@@ -443,10 +447,64 @@ function CreatePolygonTable(pNode, Indices) {
     }
 }
 
+function OpenLightmap(filePath) {
+    let buf = fs.readFileSync(filePath);
+    let data = new BufferReader(buf);
+
+    // Read header
+    say("Read ID:", data.readUInt32LE(), "R_LM_ID:", R_LM_ID);
+    say("Read Version:", data.readUInt32LE(), "R_LM_VERSION", R_LM_VERSION);
+
+    let nSourcePolygon = data.readInt32LE();
+    let nNodeCount = data.readInt32LE();
+
+    // skip num check
+
+    let nLightmap = data.readInt32LE();
+    for (let i = 0; i < nLightmap; i++) {
+        let nBmpSize = data.readInt32LE();
+        let LightmapTex = data.readStructUInt8(nBmpSize);
+        LightmapTextures.push({
+            size: nBmpSize,
+            data: LightmapTex
+        });
+    }
+
+    for (let i = 0; i < OcInfo.length; i++) {
+        data.readInt32LE();
+    }
+
+    // Read lightmap texture indices (Lightmap ID)
+    for (let i = 0; i < OcInfo.length; i++) {
+        const pInfo = OcInfo[i];
+        pInfo.nLightmapTexture = data.readInt32LE();
+    }
+
+    // Read lightmap texture coordinates
+    for (let i = 0; i < OcVertices.length; i++) {
+        const Vertex = OcVertices[i];
+        [Vertex.tu2, Vertex.tv2] = data.readStructFloatLE(2);
+    }
+
+    // original
+    exportLightmapTexture(nLightmap);
+
+    return true;
+}
+
+function exportLightmapTexture(nLightmap) {
+    console.log(nLightmap);
+    for (let i = 0; i < nLightmap; i++) {
+        let tex = LightmapTextures[i];
+        fs.writeFileSync(`./Lightmap${i}.bmp`, Buffer.from(tex.data));
+    }
+}
+
 const bspc = new BspCounts();
 OpenDescription(path.resolve("test", "world-reader", "town.RS.xml"));
 OpenRs(path.resolve("test", "world-reader", "town.RS"), bspc);
 OpenBsp(path.resolve("test", "world-reader", "town.RS.bsp"), bspc);
+OpenLightmap(path.resolve("test", "world-reader", "town.RS.lm"));
 CreatePolygonTable();
 
 fs.writeFileSync("./rs_map_obj_data.json", JSON.stringify({
