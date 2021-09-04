@@ -75,6 +75,18 @@ function init(data) {
     const ddsLoader = new THREE.DDSLoader();
 
     const lightmapTex = ddsLoader.load("./Town/lm_test.dds");
+    /* const skydome = ddsLoader.load("./BattleArena/sky_daylight.bmp.dds");
+
+    var objGeometry = new THREE.SphereBufferGeometry(13130);
+    var objMaterial = new THREE.MeshPhongMaterial({
+        map: skydome,
+        shading: THREE.FlatShading
+    });
+    objMaterial.side = THREE.BackSide;
+    let earthMesh = new THREE.Mesh(objGeometry, objMaterial);
+
+    scene.add(earthMesh); */
+
     function drawGeo(pInfo) {
         // if (node.nPolygon) console.log(node);
         const geometry = new THREE.BufferGeometry();
@@ -142,7 +154,7 @@ function init(data) {
             lightMapIntensity: 1,
         }); */
         const material = new THREE.MeshPhongMaterial({
-            map: texture, 
+            map: texture,
             side: THREE.BackSide,
             lightMap: lightMapTexture,
             color: rgb2hex([0.5882353, 0.5882353, 0.5882353]),
@@ -184,9 +196,9 @@ function init(data) {
     const pointLightHelper = new THREE.PointLightHelper(slight, sphereSize);
     scene.add(pointLightHelper); */
 
-    let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 ); 
+    let hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
     hemiLight.position.set(-7188.0190430, 6539.0439453, 22334.4062500);
-    hemiLight.castShadow = true;
+    // hemiLight.castShadow = true;
     scene.add(hemiLight);
 
     const light = new THREE.AmbientLight(0xffffff, 1);
