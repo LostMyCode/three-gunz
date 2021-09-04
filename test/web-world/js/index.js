@@ -169,6 +169,7 @@ function init(data) {
             lightMap: lightMapTexture,
             color: rgb2hex([0.5882353, 0.5882353, 0.5882353]),
             specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]),
+            transparent: !!(materialData.dwFlags & 0x0002)
         });
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
