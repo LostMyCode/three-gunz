@@ -74,7 +74,7 @@ function init(data) {
     const loader = new THREE.TextureLoader();
     const ddsLoader = new THREE.DDSLoader();
 
-    const lightmapTex = ddsLoader.load("./Town/lm_test.dds");
+    const lightmapTex = ddsLoader.load("./Town/lm.dds");
     /* const skydome = ddsLoader.load("./BattleArena/sky_daylight.bmp.dds");
 
     var objGeometry = new THREE.SphereBufferGeometry(13130);
@@ -111,7 +111,7 @@ function init(data) {
             indices.push(...shiftedIndices);
             indicesOffset += pInfo.pVertices.length;
         }
-
+        
         geometry.setAttribute(
             "position",
             new THREE.BufferAttribute(new Float32Array(positions), 3)
@@ -166,9 +166,9 @@ function init(data) {
         const material = new THREE.MeshPhongMaterial({
             map: texture,
             side: THREE.BackSide,
-            lightMap: lightMapTexture,
-            color: rgb2hex([0.5882353, 0.5882353, 0.5882353]),
-            specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]),
+            aoMap: lightMapTexture,
+            color: rgb2hex([materialData.Diffuse, materialData.Diffuse, materialData.Diffuse]),
+            specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]), //todo: fix str -> number
             transparent: !!(materialData.dwFlags & 0x0002)
         });
         const mesh = new THREE.Mesh(geometry, material);
@@ -213,13 +213,13 @@ function init(data) {
     const pointLightHelper = new THREE.PointLightHelper(slight, sphereSize);
     scene.add(pointLightHelper); */
 
-    let hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
+    let hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2.8);
     hemiLight.position.set(-7188.0190430, 6539.0439453, 22334.4062500);
     // hemiLight.castShadow = true;
     scene.add(hemiLight);
 
     const light = new THREE.AmbientLight(0xffffff, 1);
-    light.intensity = .4; // 光の強さ
+    light.intensity = 2.4; // 光の強さ
     light.position.set(1, 1, 1);
     scene.add(light);
 
@@ -231,4 +231,11 @@ function init(data) {
         renderer.render(scene, camera);
         requestAnimationFrame(tick);
     }
+
+    /* setTimeout(() => {
+        var exporter = new THREE.GLTFExporter();
+        let res = exporter.parse(scene, e => {
+            console.log(JSON.stringify(e))
+        });
+    }, 3000); */
 }
