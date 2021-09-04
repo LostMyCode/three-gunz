@@ -295,9 +295,9 @@ function Open_MaterialList(data) {
         elm.Name = mat["@_name"];
         elm.dwFlags = 0;
         elm.Diffuse = mat.DIFFUSE;
-        elm.Specular = mat.SPECULAR ? mat.SPECULAR.split(" ")[0] : null; // '0.9000000 0.9000000 0.9000000'
-        elm.Ambient = mat.AMBIENT ? mat.AMBIENT.split(" ")[0] : null;
-        elm.Diffuse = mat.DIFFUSE ? mat.DIFFUSE.split(" ")[0] : null;
+        elm.Specular = mat.SPECULAR ? Number(mat.SPECULAR.split(" ")[0]) : null; // '0.9000000 0.9000000 0.9000000'
+        elm.Ambient = mat.AMBIENT ? Number(mat.AMBIENT.split(" ")[0]) : null;
+        elm.Diffuse = mat.DIFFUSE ? Number(mat.DIFFUSE.split(" ")[0]) : null;
         elm.DiffuseMap = mat.DIFFUSEMAP;
         // elm.Power = "idk"; // atleast theres no Power in Town.RS.xml
 
