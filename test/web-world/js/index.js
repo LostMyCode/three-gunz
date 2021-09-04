@@ -87,27 +87,36 @@ function init(data) {
 
     scene.add(earthMesh); */
 
-    function drawGeo(pInfo) {
-        // if (node.nPolygon) console.log(node);
+    function drawGeo(pInfoArr, matId) {
         const geometry = new THREE.BufferGeometry();
 
         let positions = [];
         let uvs = [];
         let uvs2 = [];
         let normals = [];
-        let indices = new Uint16Array(pInfo.pInd);
-        for (let polyVertex of pInfo.pVertices) {
-            // geometry.vertices.push(new THREE.Vector(polyVertex.x, polyVertex.y, polyVertex.z));
-            positions.push(polyVertex.x, polyVertex.y, polyVertex.z)
-            uvs.push(polyVertex.tu1, polyVertex.tv1);
-            uvs2.push(polyVertex.tu2, polyVertex.tv2);
-            normals.push(polyVertex.normal.x, polyVertex.normal.y, polyVertex.normal.z);
+        let indices = [];
+        let indicesOffset = 0;
+        for (let pInfo of pInfoArr) {
+            for (let polyVertex of pInfo.pVertices) {
+                // geometry.vertices.push(new THREE.Vector(polyVertex.x, polyVertex.y, polyVertex.z));
+                positions.push(polyVertex.x, polyVertex.y, polyVertex.z);
+                uvs.push(polyVertex.tu1, polyVertex.tv1);
+                uvs2.push(polyVertex.tu2, polyVertex.tv2);
+                normals.push(polyVertex.normal.x, polyVertex.normal.y, polyVertex.normal.z);
+            }
+            let shiftedIndices = [];
+            pInfo.pInd.forEach(pInd => {
+                shiftedIndices.push(pInd + indicesOffset);
+            });
+            indices.push(...shiftedIndices);
+            indicesOffset += pInfo.pVertices.length;
         }
+
         geometry.setAttribute(
             "position",
             new THREE.BufferAttribute(new Float32Array(positions), 3)
         );
-        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
         geometry.setAttribute(
             'normal',
             new THREE.BufferAttribute(new Float32Array(normals), 3)
@@ -122,7 +131,7 @@ function init(data) {
         );
 
         let texture;
-        let materialData = data.MaterialList[pInfo.nMaterial - 1];
+        let materialData = data.MaterialList[matId - 1];
         let texFileName = materialData.DiffuseMap;
         if (texFileName) {
             texFileName = texFileName.replace(/ /g, "");
@@ -137,14 +146,15 @@ function init(data) {
         texture.offset.set(0, 0);
         texture.repeat.set(1, 1);
 
-        let lightMapTexture = null;
-        if (pInfo.nLightmapTexture != undefined) {
+        let lightMapTexture = lightmapTex;
+        /* if (pInfo.nLightmapTexture != undefined) {
             lightMapTexture = lightmapTex;
-        }
+        } */
 
         const showWireFrame = true
         // console.log(texture)
         // const material = new THREE.MeshBasicMaterial({ color: getRandomColor(), side: THREE.DoubleSide, lightMap: lightMapTexture });
+        // const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.BackSide });
         // const material = new THREE.MeshBasicMaterial({ color: 0x6699FF, wireframe: showWireFrame });
         // const material = new THREE.MeshBasicMaterial(withTex);
         /* const material = new THREE.MeshBasicMaterial({
@@ -160,15 +170,15 @@ function init(data) {
             color: rgb2hex([0.5882353, 0.5882353, 0.5882353]),
             specular: rgb2hex([materialData.Specular, materialData.Specular, materialData.Specular]),
         });
-        const plane = new THREE.Mesh(geometry, material);
-        scene.add(plane);
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
 
         // geometry.computeVertexNormals();
         // geometry.computeBoundingBox()
         // console.log(geometry.boundingBox)
         // console.log(positions);
 
-        /* let bbox = new THREE.BoxHelper(plane, "#fff");
+        /* let bbox = new THREE.BoxHelper(mesh, "#fff");
         bbox.update();
         scene.add(bbox); */
     }
@@ -176,13 +186,19 @@ function init(data) {
     const allNodes = searchNodes(data.OcRoot);
     console.log(allNodes);
 
+    polysPerMat = {};
     for (let i = 0; i < allNodes.length; i++) {
         const node = allNodes[i];
         if (node.nPolygon) {
             for (let pInfo of node.pInfo) {
-                drawGeo(pInfo)
+                // drawGeo(pInfo)
+                if (!polysPerMat[pInfo.nMaterial]) polysPerMat[pInfo.nMaterial] = [];
+                polysPerMat[pInfo.nMaterial].push(pInfo);
             }
         }
+    }
+    for (let group in polysPerMat) {
+        drawGeo(polysPerMat[group], group);
     }
 
     // renderer.shadowMap.enabled = true;
