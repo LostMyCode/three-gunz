@@ -54,38 +54,48 @@ function init(data) {
     console.log(window.devicePixelRatio);
     console.log(width + ", " + height);
 
+    const clock = new THREE.Clock();
+
     // シーンを作成
     const scene = new THREE.Scene();
-    scene.scale.set(-1, 1, 1);
+    scene.scale.set(1, -1, 1);
 
     // カメラを作成
     camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
-    // camera.position.set(0, 100, 1400);
-    camera.position.x = -0.00022959756808358926;
-    camera.position.y = -5059.912198446767;
-    camera.position.z = 0.0050549255682858195;
+    // camera.position.set(0, 500, 1400);
+    camera.position.set(-81.56873102983137, -389.85144607755143, -5077.10678359543);
+    camera.rotation.set(0, 3.13598417583715535, -0.4240758065603119)
 
-    camera.rotation.x = 1.5707953277804136;
-    camera.rotation.y = -4.537580082161764e-8;
-    camera.rotation.z = 0.04538936754410236;
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-
+    const controls = new THREE.FirstPersonControls(camera, renderer.domElement);
+    controls.lookSpeed = 0.1;
+    controls.movementSpeed = 1000;
+    controls.lookVertical = true;
+    controls.constrainVertical = true;
+    camera.lookAt(new THREE.Vector3(0, 0, 0))
     const loader = new THREE.TextureLoader();
     const ddsLoader = new THREE.DDSLoader();
 
     const lightmapTex = ddsLoader.load("./Town/lm.dds");
-    /* const skydome = ddsLoader.load("./BattleArena/sky_daylight.bmp.dds");
 
-    var objGeometry = new THREE.SphereBufferGeometry(13130);
-    var objMaterial = new THREE.MeshPhongMaterial({
-        map: skydome,
-        shading: THREE.FlatShading
-    });
-    objMaterial.side = THREE.BackSide;
-    let earthMesh = new THREE.Mesh(objGeometry, objMaterial);
+    // Load GLTF or GLB
+    const gltfLoader = new THREE.GLTFLoader();
+    const url = './Town/skydome.glb';
 
-    scene.add(earthMesh); */
+    let model = null;
+    gltfLoader.load(
+        url,
+        function (gltf) {
+            model = gltf.scene;
+            model.scale.set(1.0, -1.0, 1.0);
+            model.position.set(0, 0, 0);
+            model.rotation.set(0, 0, 0);
+            scene.add(gltf.scene);
+        },
+        function (error) {
+            // console.log('An error happened');
+            // console.log(error);
+        }
+    );
 
     function drawGeo(pInfoArr, matId) {
         const geometry = new THREE.BufferGeometry();
@@ -111,7 +121,7 @@ function init(data) {
             indices.push(...shiftedIndices);
             indicesOffset += pInfo.pVertices.length;
         }
-        
+
         geometry.setAttribute(
             "position",
             new THREE.BufferAttribute(new Float32Array(positions), 3)
@@ -172,6 +182,7 @@ function init(data) {
             transparent: !!(materialData.dwFlags & 0x0002)
         });
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotation.set(90 * (Math.PI / 180), 0, 0);
         scene.add(mesh);
 
         // geometry.computeVertexNormals();
@@ -227,7 +238,7 @@ function init(data) {
     tick();
 
     function tick() {
-        controls.update();
+        controls.update(clock.getDelta());
         renderer.render(scene, camera);
         requestAnimationFrame(tick);
     }
