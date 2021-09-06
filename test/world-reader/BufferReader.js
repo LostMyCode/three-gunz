@@ -37,6 +37,14 @@ class BufferReader {
         return arr;
     }
 
+    readStructUInt32LE(count) {
+        const arr = [];
+        for (let i = 0; i < count; i++) {
+            arr.push(this.readUInt32LE());
+        }
+        return arr;
+    }
+
     /**
      * @param {number} count - Loop count
      * @returns Struct array
