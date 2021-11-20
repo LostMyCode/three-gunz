@@ -97,6 +97,24 @@ function init(data) {
         }
     );
 
+    if (location.hash == "#lambo") {
+        gltfLoader.load(
+            "./Lamborghini/scene.gltf",
+            function (gltf) {
+                model = gltf.scene;
+                model.scale.set(111.0, -111.0, 111.0);
+                model.position.set(0, 0, 0);
+                model.rotation.set(0, 1, 0);
+                scene.add(gltf.scene);
+                console.log(gltf.scene)
+            },
+            function (error) {
+                // console.log('An error happened');
+                // console.log(error);
+            }
+        );
+    }
+
     function drawGeo(pInfoArr, matId) {
         const geometry = new THREE.BufferGeometry();
 
