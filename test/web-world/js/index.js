@@ -1,11 +1,43 @@
 window.addEventListener('DOMContentLoaded', async () => {
 
+    updateLoadingText("Loading resources...");
+
     let fetch = await window.fetch("./Town/rs_map_obj_data.json");
     let data = await fetch.json();
+
     console.log(data);
     init(data);
 
 });
+
+/* const LS = {
+    list: ["map-objects", "lightmap", "skydome"],
+    init() {
+        this.list = this.list.map((v, i) => {
+            return {
+                name: v,
+                loaded: false
+            }
+        });
+        console.log(this.list)
+    },
+    startLoad(itemName) {
+
+    },
+    onload(itemName) {
+        
+    }
+} */
+
+function updateLoadingText(msg) {
+    const loadingStatus = document.getElementById("loader-status-detail");
+    loadingStatus.innerText = msg;
+}
+
+function closeLoaderScreen() {
+    const screen = document.getElementById("loader-screen");
+    screen.style.display = "none";
+}
 
 function getRandomColor() {
     var letters = '0123456789ABCDEF';
@@ -41,7 +73,14 @@ function searchNodes(root) {
     return list;
 }
 
-function init(data) {
+const promiseList = [];
+function makePromise(callback) {
+    const p = new Promise(callback);
+    promiseList.push(p);
+    return p;
+}
+
+async function init(data) {
     // レンダラーを作成
     const renderer = new THREE.WebGLRenderer({
         canvas: document.querySelector('#canvas')
@@ -75,27 +114,36 @@ function init(data) {
     const loader = new THREE.TextureLoader();
     const ddsLoader = new THREE.DDSLoader();
 
-    const lightmapTex = ddsLoader.load("./Town/lm.dds");
+    let lightmapTex;
+    makePromise((resolve, reject) => {
+        let tex = ddsLoader.load("./Town/lm.dds", res => {
+            resolve(res);
+        });
+        lightmapTex = tex;
+    });
 
     // Load GLTF or GLB
     const gltfLoader = new THREE.GLTFLoader();
     const url = './Town/skydome.glb';
 
     let model = null;
-    gltfLoader.load(
-        url,
-        function (gltf) {
-            model = gltf.scene;
-            model.scale.set(1.0, -1.0, 1.0);
-            model.position.set(0, 0, 0);
-            model.rotation.set(0, 0, 0);
-            scene.add(gltf.scene);
-        },
-        function (error) {
-            // console.log('An error happened');
-            // console.log(error);
-        }
-    );
+    makePromise(function (resolve, reject) {
+        gltfLoader.load(
+            url,
+            function (gltf) {
+                model = gltf.scene;
+                model.scale.set(1.0, -1.0, 1.0);
+                model.position.set(0, 0, 0);
+                model.rotation.set(0, 0, 0);
+                scene.add(gltf.scene);
+                resolve();
+            },
+            function (error) {
+                // console.log('An error happened');
+                // console.log(error);
+            }
+        );
+    });
 
     if (location.hash == "#lambo") {
         gltfLoader.load(
@@ -164,9 +212,17 @@ function init(data) {
         if (texFileName) {
             texFileName = texFileName.replace(/ /g, "");
             if (texFileName.includes("../")) {
-                texture = ddsLoader.load(`${texFileName.replace(/\.\.\//, "./")}.dds`);
+                makePromise((resolve, reject) => {
+                    texture = ddsLoader.load(`${texFileName.replace(/\.\.\//, "./")}.dds`, res => {
+                        resolve(res);
+                    });
+                });
             } else {
-                texture = ddsLoader.load(`./Town/${texFileName}.dds`);
+                makePromise((resolve, reject) => {
+                    texture = ddsLoader.load(`./Town/${texFileName}.dds`, res => {
+                        resolve(res);
+                    });
+                });
             }
         }
         if (!texture) console.log("?")
@@ -252,9 +308,6 @@ function init(data) {
     light.position.set(1, 1, 1);
     scene.add(light);
 
-    // 初回実行
-    tick();
-
     function tick() {
         controls.update(clock.getDelta());
         renderer.render(scene, camera);
@@ -267,4 +320,26 @@ function init(data) {
             console.log(JSON.stringify(e))
         });
     }, 3000); */
+
+    Promise.all(promiseList).then((e) => {
+        console.log("All resources has been loaded.");
+    });
+
+    let progress = 0;
+    promiseList.forEach(p => p.then(() => progress++));
+
+    let loadCheckInterval = setInterval(() => {
+        let rate = progress / promiseList.length * 100;
+        if (rate >= 100) {
+            clearInterval(loadCheckInterval);
+            updateLoadingText("Done!");
+
+            setTimeout(() => {
+                // 初回実行
+                tick();
+
+                closeLoaderScreen();
+            }, 1000);
+        }
+    }, 100);
 }
