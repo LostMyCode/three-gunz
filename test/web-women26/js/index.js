@@ -75,6 +75,8 @@ function init(data) {
             const duration = data[0].times[data[0].times.length - 1];
             const animationClip = new THREE.AnimationClip("testname", duration, tracks)
             mixer = new THREE.AnimationMixer(model);
+            mixer.timeScale = 2 // アニメーション速度
+
             let action = mixer.clipAction(animationClip);
 
             // action.setLoop(THREE.LoopOnce);
