@@ -86,8 +86,7 @@ async function init(data) {
         canvas: document.querySelector('#canvas')
     });
     // ウィンドウサイズ設定
-    width = document.getElementById('main_canvas').getBoundingClientRect().width;
-    height = document.getElementById('main_canvas').getBoundingClientRect().height;
+    const { width, height } = document.getElementById('main_canvas').getBoundingClientRect();
     renderer.setPixelRatio(1);
     renderer.setSize(width, height);
     console.log(window.devicePixelRatio);
@@ -100,7 +99,7 @@ async function init(data) {
     scene.scale.set(1, -1, 1);
 
     // カメラを作成
-    camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 1, 100000);
     // camera.position.set(0, 500, 1400);
     camera.position.set(-81.56873102983137, -389.85144607755143, -5077.10678359543);
     camera.rotation.set(0, 3.13598417583715535, -0.4240758065603119)
@@ -272,7 +271,7 @@ async function init(data) {
     const allNodes = searchNodes(data.OcRoot);
     console.log(allNodes);
 
-    polysPerMat = {};
+    const polysPerMat = {};
     for (let i = 0; i < allNodes.length; i++) {
         const node = allNodes[i];
         if (node.nPolygon) {

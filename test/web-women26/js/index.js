@@ -13,8 +13,7 @@ function init(data) {
         canvas: document.querySelector('#canvas')
     });
     // ウィンドウサイズ設定
-    width = document.getElementById('main_canvas').getBoundingClientRect().width;
-    height = document.getElementById('main_canvas').getBoundingClientRect().height;
+    const { width, height } = document.getElementById('main_canvas').getBoundingClientRect();
     renderer.setPixelRatio(1);
     renderer.setSize(width, height);
     console.log(window.devicePixelRatio);
@@ -25,7 +24,7 @@ function init(data) {
     scene.scale.set(1, -1, 1);
 
     // カメラを作成
-    camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
     camera.position.set(0, 100, -400);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
