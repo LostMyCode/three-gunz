@@ -1,42 +1,38 @@
-# Three GunZ Project
-Trying to make web version of GunZ The Duel using Three.js
+# Three GunZ Project  
+Recreating GunZ The Duel as a web version using Three.js  
 
 ![image](https://user-images.githubusercontent.com/63048878/131472829-823366c7-83a1-48ed-a10f-6899dbfa5db7.png)
 
-GunZ was an online TPS game created by MAIET.
+GunZ was a fast-paced online third-person shooter (TPS) developed by MAIET Entertainment.
 
-## Just a curiosity
+## Just out of curiosity / For fun
 
-GunZ source code was leaked around 2007 (The coding lang was mostly c++)
+Around 2007, the GunZ source code (mostly written in C++) was leaked.  
+After that, many developers created tools, private servers, custom clients, and various fan projects.  
+I was also one of them — I messed around with it quite a bit between ~2012 and 2016.
 
-and then many devs made some tools, private servers, etc...
-
-I did too when around 2012 - 2016
-
-But now what I want to do is... **Implementing GunZ on web**
+Now, years later, what I really want to try is:  
+**bringing GunZ back to life… in the browser.**
 
 # Demo(s)
 
-Here is some demos in my project.
+Here are some early demos from the project.
 
-## Drawing GunZ map (Town) on web browser using Three.js 
+## Loading & rendering a GunZ map (Town) in the browser with Three.js
 
 ![LoadTownWithThreeJS](https://user-images.githubusercontent.com/63048878/131979273-abc81278-3cd6-4365-97b2-99f54ca6a67e.png)
 
-Demo URL: https://gunz.sigr.io/test/web-world/
+Demo: https://gunz.sigr.io/test/web-world/  
+Repository: https://github.com/LostMyCode/three-gunz/tree/master/test/web-world
 
-Codes: https://github.com/LostMyCode/three-gunz/tree/master/test/web-world
+I finally built a GunZ map reader/converter!  
+Still working on proper lightmap support though.
 
-I finally have made GunZ Map Reader(Converter)!!
-
-but I'm still working on Lightmap thing
-
-## Drawing Gunz NPC(MOB) with Three.js
+## Rendering a GunZ NPC (Palmpoa / MOB) with Three.js
 
 ![DrawPalmpoa](https://user-images.githubusercontent.com/63048878/131980208-294d0962-9add-4ca1-a894-2561323bc7c0.png)
 
-Demo URL: https://gunz.sigr.io/test/web-palmpoa/
+Demo: https://gunz.sigr.io/test/web-palmpoa/  
+Repository: https://github.com/LostMyCode/three-gunz/tree/master/test/web-palmpoa
 
-Codes: https://github.com/LostMyCode/three-gunz/tree/master/test/web-palmpoa
-
-I used blender2.8 to convert GunZ model(.elu) file into .glb file
+For this one I used Blender 2.8 to convert the original GunZ model (.elu) into .glb format.
