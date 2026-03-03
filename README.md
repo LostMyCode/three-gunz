@@ -36,3 +36,30 @@ Demo: https://gunz.sigr.io/test/web-palmpoa/
 Repository: https://github.com/LostMyCode/three-gunz/tree/master/test/web-palmpoa
 
 For this one I used Blender 2.8 to convert the original GunZ model (.elu) into .glb format.
+
+## Update: Full Browser Port (2026) - Now the Entire GunZ Runs in Your Browser!
+
+From the original Three.js map loader demo (2021) → **I finally achieved the full port!**  
+The **complete original GunZ The Duel client** (including MatchServer) now runs **entirely in the browser** using WebAssembly.
+
+<img width="510" alt="whiplash-gunz" src="https://github.com/user-attachments/assets/6350e213-7c9a-4069-88b5-37ea8b880aad" />
+
+### Key Achievements
+- Original GunZ binaries compiled to WebAssembly via Emscripten (real native execution, not a remake).
+- D3D9 rendering translated to WebGL in real-time (custom wrapper – check my other projects).
+- Networking via WebSocket proxy.
+- Filesystem handled with IndexedDB (all .rs, .elu, sounds, etc. load and persist in browser).
+- **MatchServer also compiled to WASM** → Play solo/local deathmatch without any external server!
+
+**Just open the link and play – no downloads, no installs, nothing required.**
+
+▶ **Playable Demo (Browser GunZ Full Version)**:  
+[Click here to play instantly](https://gunz.sigr.io/)
+
+This project started as a fun Three.js experiment with GunZ maps... now it's a full browser revival of GunZ.  
+Huge thanks to the community for the motivation back then!
+
+GunZ forever in the browser era 🔥  
+If you're interested in collaborating (perf improvements, multiplayer WebRTC proxy, etc.), feel free to open issues or reach out.
+
+Last updated: March 2026
